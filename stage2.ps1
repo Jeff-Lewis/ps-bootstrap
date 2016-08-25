@@ -18,7 +18,7 @@ $usrModulesPath = [system.environment]::GetEnvironmentVariable("PSModulePath", [
 if (!($env:PSModulePath.Contains($usrModules))) {
     if (!($usrModulesPath.Contains($usrModules))) {
     [system.environment]::SetEnvironmentVariable("PSModulePath",
-        $usrModulesPath + ";" + $usrModules, 
+        "$usrModulesPath;$usrModules", 
         [System.EnvironmentVariableTarget]::User);
     }
     $env:PSModulePath = [system.environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::User) `
@@ -36,5 +36,3 @@ if ((gmo require) -eq $null) {
     }
 } 
 ipmo require -MinimumVersion $requireVer
-
-write-host "stage2 done"
