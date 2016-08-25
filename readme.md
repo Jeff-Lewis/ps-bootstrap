@@ -12,7 +12,7 @@ Or:
 
 Or if you want to debug the script:
 
-    iex ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "bootstrap.ps1"
+    ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "bootstrap.ps1"
     & "bootstrap.ps1"
 
 This will download [`Bootstrap.ps1`](https://github.com/qbikez/ps-bootstrap/blob/master/bootstrap.ps1), which in turn will download and invoke all other stages, which are:
