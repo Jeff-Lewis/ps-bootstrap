@@ -1,3 +1,4 @@
+# stage 0 - install package management (enable install-module)
 [CmdletBinding()]
 param ($path = ".", [switch][bool]$importonly)
 
@@ -178,8 +179,7 @@ catch {
 
 Set-PSRepository -name PSGallery -InstallationPolicy Trusted -verbose 
 
-get-packageprovider -name chocolatey -Force | out-string | write-host
-set-PackageSource chocolatey -ProviderName Chocolatey -Trusted
+
 #register-packagesource -Name chocolatey -Provider PSModule -Trusted -Location http://chocolatey.org/api/v2/ -Verbose
 
 
