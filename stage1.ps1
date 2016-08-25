@@ -8,16 +8,12 @@ set-PackageSource chocolatey -ProviderName Chocolatey -Trusted
 
 ######## chocolatey helpers
 
-
-
-
 function test-command([string] $cmd) {
     return Get-Command $cmd -ErrorAction Ignore
 }
 function test-choco() {
     return test-command "choco"
 }
-
 
 function install-chocolatey ($version = $null) {
 	if (!(test-choco)) {
@@ -138,3 +134,6 @@ function _Refresh-Env() {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
     $env:PSModulePath =  [System.Environment]::GetEnvironmentVariable("PSModulePath","User") + ";" + [System.Environment]::GetEnvironmentVariable("PSModulePath","Machine")
 }
+
+
+ensure-choco

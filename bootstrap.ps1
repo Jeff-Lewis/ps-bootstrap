@@ -46,4 +46,12 @@ function Invoke-UrlScript(
     }
 }
 
-#Invoke-UrlScript "http://bit.ly/qbootstrap1" "../.scripts/bootstrap.ps1"
+$stages = "stage0","stage1","stage2"
+
+foreach($stage in $stages) {
+    if ((test-path ".git") -and (test-path "$stage.ps1")) {
+        & ".\$stage.ps1"
+    } else {
+        Invoke-UrlScript "https://raw.githubusercontent.com/qbikez/ps-bootstrap/master/$stage.ps1" ".$stage.ps1"
+    }
+}
