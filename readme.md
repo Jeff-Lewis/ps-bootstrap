@@ -2,19 +2,11 @@
 
 ## Usage
 
-Add this piece of code to your script (if running elevated):
+Add this piece of code to your script:
 
-    iex ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap'))
+    ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1"
+    & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
     
-Or:
-
-    Start-Process powershell -Verb runAs -wait -ArgumentList "-Command ""iex ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap'))"""
-
-Or if you want to debug the script:
-
-    ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "bootstrap.ps1"
-    & "bootstrap.ps1"
-
 This will download [`Bootstrap.ps1`](https://github.com/qbikez/ps-bootstrap/blob/master/bootstrap.ps1), which in turn will download and invoke all other stages, which are:
 
 * `stage0.ps1` - ensures PowerShellGet is present

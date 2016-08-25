@@ -112,7 +112,7 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
     }
 }
 
-$wd = "$env:appdata/ps-bootstrap"
+$wd = "$env:localappdata/ps-bootstrap"
 
 if (!(test-path $wd)) { mkdir $wd }
 pushd 
