@@ -1,3 +1,5 @@
+[CmdletBinding()]
+param()
 $version = "1.0.0"
 
 
@@ -7,6 +9,27 @@ function _is-admin() {
  $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
  $IsAdmin=$prp.IsInRole($adm)
  return $IsAdmin
+}
+
+function test-stagelock($stagefile) {
+    $lockfile = "$stagefile.lock"
+    $lockvalid = $false
+    if (test-path $lockfile) {
+        $lockversion = get-content $lockfile | select -first 1
+        if ($lockversion -ne $version) {
+            $lockvalid = $false
+        }
+        else {
+            $lockvalid = $true
+        }
+    }
+    return $lockvalid
+}
+
+function write-stagelock($stagefile) {
+    $lockfile = "$stagefile.lock"
+    $version | out-file $lockfile -force
+    get-date | out-string | Out-File $lockfile -append
 }
 
 function Invoke-UrlScript(
@@ -20,18 +43,7 @@ function Invoke-UrlScript(
     if (!(test-path $outdir)) { $null = mkdir $outdir }
     cd $outdir
     try {
-        if (!(test-path ".scripts")) { mkdir ".scripts" }
-        $lockfile = "$outdir\$name.lock"
-        $lockvalid = $false
-        if (test-path $lockfile) {
-            $lockversion = get-content $lockfile | select -first 1
-            if ($lockversion -ne $version) {
-                $lockvalid = $false
-            }
-            else {
-                $lockvalid = $true
-            }
-        }
+        $lockvalid = test-stagelock $outfile
         if (!$lockvalid) {
             #init build tools        
             $bootstrap = "$outdir/$name"
@@ -55,10 +67,10 @@ function Invoke-UrlScript(
             }
             & $bootstrap
      
+            write-stagelock $outfile
             #Install-Module pathutils
             #refresh-env
-            $version | out-file $lockfile -force
-            get-date | out-string | Out-File $lockfile -append
+            
         }
     }
     catch {
@@ -92,9 +104,24 @@ if (!(test-path $wd)) { mkdir $wd }
 pushd 
 try {
     cd $wd
-    if (!(ElevateMe)) { return }
+    
 
     $stages = "stage0","stage1","stage2"
+    $allvalid = $true
+    foreach($stage in $stages) {
+        if (!(test-stagelock ".$stage.ps1")) {
+            $allvalid = $false
+            write-verbose ".$stage.ps1: PENDING"
+        } else {
+            write-verbose ".$stage.ps1: READY"
+        }
+    }
+
+    if ($allvalid) { 
+        write-verbose "all stages READY"
+        return 
+    }
+    if (!(ElevateMe)) { return }
 
     foreach($stage in $stages) {
         if ((test-path ".git") -and (test-path "$stage.ps1")) {
