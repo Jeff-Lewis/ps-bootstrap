@@ -11,7 +11,7 @@ function is-admin() {
 
 if (Is-Admin) { $scope = "AllUsers" }
 
-$requireVer = 1.0.5
+$requireVer = "1.0.5"
 
 ipmo require -erroraction ignore -MinimumVersion $requireVer
 if ((gmo require) -eq $null) { 
