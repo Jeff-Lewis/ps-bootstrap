@@ -1,16 +1,29 @@
+$version = "1.0.0"
+
 function Invoke-UrlScript(
     [Parameter(Mandatory=$true)]$url, 
     [Parameter(Mandatory=$true)]$outfile
 ) {    
     pushd 
     $outdir = split-path -Parent $outfile
+    if ([string]::isnullorempty($outdir)) { $outdir = "." }
     $name = Split-Path -Leaf $outfile
     if (!(test-path $outdir)) { $null = mkdir $outdir }
     cd $outdir
     try {
         if (!(test-path ".scripts")) { mkdir ".scripts" }
         $lockfile = "$outdir\$name.lock"
-        if (!(test-path $lockfile)) {
+        $lockvalid = $false
+        if (test-path $lockfile) {
+            $lockversion = get-content $lockfile | select -first 1
+            if ($lockversion -ne $version) {
+                $lockvalid = $false
+            }
+            else {
+                $lockvalid = $true
+            }
+        }
+        if (!$lockvalid) {
             #init build tools        
             $bootstrap = "$outdir/$name"
             $shouldDownload = $true
@@ -35,7 +48,8 @@ function Invoke-UrlScript(
      
             #Install-Module pathutils
             #refresh-env
-            get-date | out-string | Out-File $lockfile
+            $version | out-file $lockfile -force
+            get-date | out-string | Out-File $lockfile -append
         }
     }
     catch {
@@ -63,13 +77,23 @@ function ElevateMe() {
     }
 }
 
+$wd = "$env:appdata/ps-bootstrap"
 
-$stages = "stage0","stage1","stage2"
+if (!(test-path $wd)) { mkdir $wd }
+pushd 
+try {
+    cd $wd
+    if (!(ElevateMe)) { return }
 
-foreach($stage in $stages) {
-    if ((test-path ".git") -and (test-path "$stage.ps1")) {
-        & ".\$stage.ps1"
-    } else {
-        Invoke-UrlScript "https://raw.githubusercontent.com/qbikez/ps-bootstrap/master/$stage.ps1" ".$stage.ps1"
+    $stages = "stage0","stage1","stage2"
+
+    foreach($stage in $stages) {
+        if ((test-path ".git") -and (test-path "$stage.ps1")) {
+            & ".\$stage.ps1"
+        } else {
+            Invoke-UrlScript "https://raw.githubusercontent.com/qbikez/ps-bootstrap/master/$stage.ps1" ".$stage.ps1"
+        }
     }
+} finally {
+    popd
 }
