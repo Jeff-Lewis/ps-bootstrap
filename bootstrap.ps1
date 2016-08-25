@@ -1,7 +1,6 @@
 [CmdletBinding()]
-param()
+param([switch][bool]$force = $true)
 $version = "1.0.0"
-
 
 function _is-admin() {
  $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -10,6 +9,7 @@ function _is-admin() {
  $IsAdmin=$prp.IsInRole($adm)
  return $IsAdmin
 }
+
 
 function test-stagelock($stagefile) {
     $lockfile = "$stagefile.lock"
@@ -82,20 +82,30 @@ function Invoke-UrlScript(
 }
 
 
-function ElevateMe($invocation = $null) {
+function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
     if (!(_is-admin)) {
         Write-Host "You need to be Administrator in order to do installation."
         write-warning "starting this script as Administrator..."
         if ($invocation -eq $null) { $invocation = $myinvocation }
-        $cmd = "$($invocation.scriptname)"
+        $cmd = $null
+        $invocation | out-string | write-host
+        $invocation.MyCommand | out-string | write-host
+        #$cmd = "$($invocation.scriptname)"
         if ([string]::IsNullOrEmpty($cmd)) {
             $cmd = $invocation.MyCommand.Definition
         }
-        $args = $cmd
+        $args = @($cmd)
+        if ($VerbosePreference -eq "Continue") { $args += @("-verbose") }
+        #$args += " > bootstrap.log"
         #$args = "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"
 		write-host "starting as admin:"
         write-host "powershell -Verb runAs -ArgumentList $args"
-        Start-Process powershell -Verb runAs -ArgumentList $args -wait
+        if ($usecmd) {
+            Start-Process cmd -Verb runAs -ArgumentList "/C powershell $args > $env:TEMP/bootstrap.log" -wait
+            gc "$env:TEMP/bootstrap.log" | write-host
+        } else {
+            Start-Process powershell -Verb runAs -ArgumentList $args -wait
+        }        
         return $false
     } else {
         return $true
@@ -121,11 +131,11 @@ try {
         }
     }
 
-    if ($allvalid) { 
+    if ($allvalid -and !$force) { 
         write-verbose "all stages READY"
         return 
     }
-    if (!(ElevateMe $MyInvocation)) { return }
+    if (!(ElevateMe $MyInvocation -usecmd)) { return }
 
     foreach($stage in $stages) {
         if ((test-path ".git") -and (test-path "$stage.ps1")) {
