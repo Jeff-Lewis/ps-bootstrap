@@ -46,6 +46,24 @@ function Invoke-UrlScript(
     }
 }
 
+
+function ElevateMe() {
+    if (!(test-isadmin)) {
+        Write-Host "You need to be Administrator in order to do installation."
+        write-warning "starting this script as Administrator..."
+        $i = $myinvocation
+        $args = "$($i.scriptname)"
+        #$args = "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"
+		write-host "starting as admin:"
+        write-host "powershell -Verb runAs -ArgumentList $args"
+        Start-Process powershell -Verb runAs -ArgumentList $args -wait
+        return $false
+    } else {
+        return $true
+    }
+}
+
+
 $stages = "stage0","stage1","stage2"
 
 foreach($stage in $stages) {

@@ -1,5 +1,15 @@
 $scope = "CurrentUser"
-if (test-IsAdmin) { $scope = "AllUsers" }
+
+
+function is-admin() {
+    $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
+    $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+    $IsAdmin=$prp.IsInRole($adm)
+    return $IsAdmin
+}
+
+if (Is-Admin) { $scope = "AllUsers" }
 
 $requireVer = 1.0.5
 

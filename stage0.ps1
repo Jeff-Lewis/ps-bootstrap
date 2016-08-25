@@ -126,12 +126,6 @@ function is-admin() {
 
 if ($importonly) { return }
 
-if (!(is-admin)) {
-    $r = Start-Process powershell -Verb runAs -ArgumentList @("-ExecutionPolicy", "Unrestricted", "$psscriptroot\bootstrap.ps1") -Wait
-    $r
-    return
-}
-
 $execPolicy = get-executionpolicy
 
 if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
