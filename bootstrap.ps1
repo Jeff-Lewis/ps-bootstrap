@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([switch][bool]$force = $true)
+param([switch][bool]$force = $false)
 $version = "1.0.0"
 
 function _is-admin() {
