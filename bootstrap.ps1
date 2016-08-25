@@ -82,12 +82,16 @@ function Invoke-UrlScript(
 }
 
 
-function ElevateMe() {
+function ElevateMe($invocation = $null) {
     if (!(_is-admin)) {
         Write-Host "You need to be Administrator in order to do installation."
         write-warning "starting this script as Administrator..."
-        $i = $myinvocation
-        $args = "$($i.scriptname)"
+        if ($invocation -eq $null) { $invocation = $myinvocation }
+        $cmd = "$($invocation.scriptname)"
+        if ([string]::IsNullOrEmpty($cmd)) {
+            $cmd = $invocation.MyCommand.Definition
+        }
+        $args = $cmd
         #$args = "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"
 		write-host "starting as admin:"
         write-host "powershell -Verb runAs -ArgumentList $args"
@@ -121,7 +125,7 @@ try {
         write-verbose "all stages READY"
         return 
     }
-    if (!(ElevateMe)) { return }
+    if (!(ElevateMe $MyInvocation)) { return }
 
     foreach($stage in $stages) {
         if ((test-path ".git") -and (test-path "$stage.ps1")) {
