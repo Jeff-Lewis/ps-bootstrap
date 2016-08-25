@@ -1,5 +1,14 @@
 $version = "1.0.0"
 
+
+function _is-admin() {
+ $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+ $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
+ $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+ $IsAdmin=$prp.IsInRole($adm)
+ return $IsAdmin
+}
+
 function Invoke-UrlScript(
     [Parameter(Mandatory=$true)]$url, 
     [Parameter(Mandatory=$true)]$outfile
@@ -62,7 +71,7 @@ function Invoke-UrlScript(
 
 
 function ElevateMe() {
-    if (!(test-isadmin)) {
+    if (!(_is-admin)) {
         Write-Host "You need to be Administrator in order to do installation."
         write-warning "starting this script as Administrator..."
         $i = $myinvocation
