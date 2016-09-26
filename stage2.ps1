@@ -26,10 +26,10 @@ if (!($env:PSModulePath.Contains($usrModules))) {
 }
 
 ipmo require -erroraction ignore -MinimumVersion $requireVer
-if ((gmo require) -eq $null) {
+if ((gmo require -ErrorAction Ignore) -eq $null) {
     #try import any version       
-    ipmo require
-    if ((gmo require) -eq $null) {       
+    ipmo require -ErrorAction ignore
+    if ((gmo require -ErrorAction Ignore) -eq $null) {       
         install-module require -scope $scope -MinimumVersion $requireVer -erroraction stop
     } else {
         update-module require -erroraction stop
