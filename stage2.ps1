@@ -30,7 +30,7 @@ if ((gmo require -ErrorAction Ignore) -eq $null) {
     #try import any version       
     ipmo require -ErrorAction ignore
     if ((gmo require -ErrorAction Ignore) -eq $null) {       
-        install-module require -scope $scope -MinimumVersion $requireVer -erroraction stop
+        install-module require -scope $scope -MinimumVersion $requireVer -erroraction stop -allowClobber
     } else {
         update-module require -erroraction stop
     }
