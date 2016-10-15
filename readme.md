@@ -4,13 +4,16 @@
 
 Add this piece of code to your script:
 
-    ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1"
+    if (!(test-path "$env:localappdata/ps-bootstrap")) { $null = mkdir "$env:localappdata/ps-bootstrap" }
+    ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1" 
     & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
     
 Or paste this into Powershell console:
 
+    if (!(test-path "$env:localappdata/ps-bootstrap")) { $null = mkdir "$env:localappdata/ps-bootstrap" }
     ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file; "$env:localappdata/ps-bootstrap/bootstrap.ps1"
-& "$env:localappdata/ps-bootstrap/bootstrap.ps1"
+    & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
+
 This will download [`Bootstrap.ps1`](https://github.com/qbikez/ps-bootstrap/blob/master/bootstrap.ps1), which in turn will download and invoke all other stages, which are:
 
 * `stage0.ps1` - ensures PowerShellGet is present
