@@ -30,7 +30,15 @@ if ((gmo require -ErrorAction Ignore) -eq $null) {
     #try import any version       
     ipmo require -ErrorAction ignore
     if ((gmo require -ErrorAction Ignore) -eq $null) {       
-        install-module require -scope $scope -MinimumVersion $requireVer -erroraction stop -allowClobber
+        $a = @{
+            Scope = $scope
+            MinimumVersion = $requireVer
+            ErrorAction = "stop"            
+        }
+        if ($PSVersionTable.PSVersion -ge "5.0") {
+            $a += @{ allowClobber = $true }
+        }
+        install-module require @a
     } else {
         update-module require -erroraction stop
     }
