@@ -11,7 +11,7 @@ function is-admin() {
 
 if (Is-Admin) { $scope = "AllUsers" }
 
-$requireVer = "1.0.5"
+
 
 $usrModules = "$env:USERPROFILE\Documents\WindowsPowerShell\Modules"
 $usrModulesPath = [system.environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::User) 
@@ -25,22 +25,27 @@ if (!($env:PSModulePath.Contains($usrModules))) {
         + ";" + [system.environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::Machine) 
 }
 
-ipmo require -erroraction ignore -MinimumVersion $requireVer
-if ((gmo require -ErrorAction Ignore) -eq $null) {
-    #try import any version       
-    ipmo require -ErrorAction ignore
-    if ((gmo require -ErrorAction Ignore) -eq $null) {       
-        $a = @{
-            Scope = $scope
-            MinimumVersion = $requireVer
-            ErrorAction = "stop"            
+function _install-module($name, $version) {
+    ipmo $name -erroraction ignore -MinimumVersion $version
+    if ((gmo $name -ErrorAction Ignore) -eq $null) {
+        #try import any version       
+        ipmo $name -ErrorAction ignore
+        if ((gmo $name -ErrorAction Ignore) -eq $null) {       
+            $a = @{
+                Scope = $scope
+                MinimumVersion = $version
+                ErrorAction = "stop"            
+            }
+            if ($PSVersionTable.PSVersion -ge "5.0") {
+                $a += @{ allowClobber = $true }
+            }
+            install-module $name @a
+        } else {
+            update-module $name -erroraction stop
         }
-        if ($PSVersionTable.PSVersion -ge "5.0") {
-            $a += @{ allowClobber = $true }
-        }
-        install-module require @a
-    } else {
-        update-module require -erroraction stop
-    }
-} 
-ipmo require -MinimumVersion $requireVer
+    } 
+    ipmo $name -MinimumVersion $version
+}
+
+_install-module require -version "1.0.5"
+
