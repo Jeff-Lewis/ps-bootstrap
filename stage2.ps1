@@ -25,6 +25,9 @@ if (!($env:PSModulePath.Contains($usrModules))) {
         + ";" + [system.environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::Machine) 
 }
 
+(get-command install-module)
+(get-command install-module).Parameters
+
 function _install-module($name, $version) {
     ipmo $name -erroraction ignore -MinimumVersion $version
     if ((gmo $name -ErrorAction Ignore) -eq $null) {
