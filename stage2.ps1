@@ -39,7 +39,7 @@ function _install-module($name, $version) {
                 MinimumVersion = $version
                 ErrorAction = "stop"            
             }
-            if ($PSVersionTable.PSVersion -ge "5.0") {
+            if ((get-command install-module).parameters["allowclobber"] -ne $null) {
                 $a += @{ allowClobber = $true }
             }
             install-module $name @a
