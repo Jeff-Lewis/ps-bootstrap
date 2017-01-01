@@ -70,6 +70,10 @@ param([switch][bool]$force)
         $psgetmodules = @(get-module powershellget -ListAvailable)
         write-host "psget modules:"
         $psgetmodules | out-string | write-host
+
+	if ($psgetmodules.length -eq 0) {	
+		throw "PowerShellGet module not found!"
+	}
         
         $modulesrc = $psgetmodules[0].path
         $moduleDir = (split-path -parent $modulesrc)          
