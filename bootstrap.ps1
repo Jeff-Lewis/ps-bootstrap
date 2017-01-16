@@ -11,9 +11,13 @@ function _is-admin() {
 }
 
 function test-executionPolicy() {
-   
+   $execPolicy = get-executionpolicy
 
-
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        return $false
+    } else {
+        return $true
+    }
 }
 
 function enable-execution() {
@@ -137,17 +141,21 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
     }
 }
 
+
+
 $wd = "$env:localappdata/ps-bootstrap"
+
+    if (!(test-executionPolicy)) {
+        enable-execution
+        $force = $true                
+    }
+
 
 if (!(test-path $wd)) { mkdir $wd }
 pushd 
 try {
     cd $wd
-    
-    if (!(test-executionPolicy)) {
-        enable-execution
-    }
-
+ 
     $stages = "stage0","stage1","stage2"
     $allvalid = $true
     foreach($stage in $stages) {
