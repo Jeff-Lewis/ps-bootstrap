@@ -10,6 +10,31 @@ function _is-admin() {
  return $IsAdmin
 }
 
+function test-executionPolicy() {
+   
+
+
+}
+
+function enable-execution() {
+    $execPolicy = get-executionpolicy
+
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        $userpolicy = Get-ExecutionPolicy -Scope CurrentUser
+        if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass" -and $userpolicy -ne "Undefined") {
+            Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction stop 
+        }
+        Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
+    } else {
+        return $true
+    }
+    
+    $execPolicy = get-executionpolicy
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        throw "failed to set ExecuctionPolicy to Unrestricted"
+    }
+    
+}
 
 function test-stagelock($stagefile) {
     $lockfile = "$stagefile.lock"
@@ -119,6 +144,9 @@ pushd
 try {
     cd $wd
     
+    if (!(test-executionPolicy)) {
+        enable-execution
+    }
 
     $stages = "stage0","stage1","stage2"
     $allvalid = $true

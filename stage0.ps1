@@ -130,21 +130,6 @@ function is-admin() {
 
 if ($importonly) { return }
 
-$execPolicy = get-executionpolicy
-
-if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
-    Set-ExecutionPolicy Unrestricted -Force -ErrorAction Continue 
-    $userpolicy = Get-ExecutionPolicy -Scope UserPolicy
-    if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass" -and $userpolicy -ne "Undefined") {
-        Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction Continue 
-    }
-}
-
-$execPolicy = get-executionpolicy
-if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
-    throw "failed to set ExecuctionPolicy to Unrestricted"
-}
-
 $e = get-envinfo -checkcommands "Install-Module"
 write-host "Env info:"
 $e | out-string | write-host
