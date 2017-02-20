@@ -77,7 +77,7 @@ function Invoke-UrlScript(
             #init build tools        
             $bootstrap = "$outdir/$name"
             $shouldDownload = $true
-            if (test-path $bootstrap -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
+            if ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
 	            $ts = (Get-Item $bootstrap).LastWriteTime
                 $h = Invoke-WebRequest $url -Method Head
                 try {
