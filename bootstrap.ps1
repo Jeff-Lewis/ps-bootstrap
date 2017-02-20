@@ -77,7 +77,7 @@ function Invoke-UrlScript(
             #init build tools        
             $bootstrap = "$outdir/$name"
             $shouldDownload = $true
-            if (test-path $bootstrap) {
+            if (test-path $bootstrap -and (get-command Invoke-WebRequest -erroraction Ignore) -ne $null) {
 	            $ts = (Get-Item $bootstrap).LastWriteTime
                 $h = Invoke-WebRequest $url -Method Head
                 try {
@@ -92,7 +92,7 @@ function Invoke-UrlScript(
                 }
             }
             if ($shouldDownload) {
-                Invoke-WebRequest $url -UseBasicParsing -OutFile $bootstrap
+	    	((New-Object System.Net.WebClient).DownloadString($url)) | out-file $bootstrap
             }
             & $bootstrap
      
