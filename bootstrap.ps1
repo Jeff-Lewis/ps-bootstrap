@@ -50,7 +50,7 @@ function Invoke-UrlScript(
             $shouldDownload = $true
             if (test-path $bootstrap) {
 	            $ts = (Get-Item $bootstrap).LastWriteTime
-                $h = Invoke-WebRequest $url -Method Head
+                $h = Invoke-WebRequest $url -Method Head -UseBasicParsing
                 try {
                 $r = Invoke-WebRequest $url -UseBasicParsing -Headers @{"If-Modified-Since" = $ts } 
                     if ($r.StatusCode -eq 200) {
@@ -63,7 +63,7 @@ function Invoke-UrlScript(
                 }
             }
             if ($shouldDownload) {
-                Invoke-WebRequest $url -UseBasicParsing -OutFile $bootstrap
+                ((New-Object System.Net.WebClient).DownloadString("$url")) | out-file $bootstrap -Encoding utf8
             }
             & $bootstrap
      

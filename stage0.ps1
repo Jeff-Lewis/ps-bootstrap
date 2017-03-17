@@ -52,7 +52,7 @@ function download-oneget() {
     $log = "$tmpdir\log.txt"
     if (!(test-path $dest)) {
         write-host "downloading $dest"
-        invoke-webrequest -Uri $url -OutFile $dest
+        ((New-Object System.Net.WebClient).DownloadString("$url")) | out-file $dest -Encoding utf8
     }
     write-host "installing $dest"
     $out = & cmd /c start /wait msiexec /i $dest /qn /passive /log "$log"
@@ -82,7 +82,7 @@ param([switch][bool]$force)
         $tmp = "$tmpdir\PSGet.psm1" 
 
         write-host "downloading patched Psget.psm1 from $src to $tmp"
-        invoke-webrequest $src -OutFile $tmp -UseBasicParsing
+        ((New-Object System.Net.WebClient).DownloadString("$src")) | out-file $tmp -Encoding utf8
 
         write-host "overwriting $target with $tmp"
         Copy-Item $tmp $target -Force -Verbose
@@ -92,7 +92,7 @@ param([switch][bool]$force)
         $tmp = "$tmpdir\PowerShellGet.psd1"
 
         write-host "downloading patched Psget.psd1 from $src to $tmp"
-        invoke-webrequest $src -OutFile $tmp -UseBasicParsing
+        ((New-Object System.Net.WebClient).DownloadString("$src")) | out-file $tmp -Encoding utf8
 
         write-host "overwriting $target with $tmp"
         Copy-Item $tmp $target -Force -Verbose
