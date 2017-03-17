@@ -10,6 +10,35 @@ function _is-admin() {
  return $IsAdmin
 }
 
+function test-executionPolicy() {
+   $execPolicy = get-executionpolicy
+
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        return $false
+    } else {
+        return $true
+    }
+}
+
+function enable-execution() {
+    $execPolicy = get-executionpolicy
+
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        $userpolicy = Get-ExecutionPolicy -Scope CurrentUser
+        if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass" -and $userpolicy -ne "Undefined") {
+            Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction stop 
+        }
+        Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
+    } else {
+        return $true
+    }
+    
+    $execPolicy = get-executionpolicy
+    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+        throw "failed to set ExecuctionPolicy to Unrestricted"
+    }
+    
+}
 
 function test-stagelock($stagefile) {
     $lockfile = "$stagefile.lock"
@@ -48,7 +77,7 @@ function Invoke-UrlScript(
             #init build tools        
             $bootstrap = "$outdir/$name"
             $shouldDownload = $true
-            if (test-path $bootstrap) {
+            if ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
 	            $ts = (Get-Item $bootstrap).LastWriteTime
                 $h = Invoke-WebRequest $url -Method Head -UseBasicParsing
                 try {
@@ -112,14 +141,21 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
     }
 }
 
+
+
 $wd = "$env:localappdata/ps-bootstrap"
+
+    if (!(test-executionPolicy)) {
+        enable-execution
+        $force = $true                
+    }
+
 
 if (!(test-path $wd)) { mkdir $wd }
 pushd 
 try {
     cd $wd
-    
-
+ 
     $stages = "stage0","stage1","stage2"
     $allvalid = $true
     foreach($stage in $stages) {

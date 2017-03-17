@@ -52,7 +52,11 @@ function download-oneget() {
     $log = "$tmpdir\log.txt"
     if (!(test-path $dest)) {
         write-host "downloading $dest"
+<<<<<<< HEAD
         ((New-Object System.Net.WebClient).DownloadString("$url")) | out-file $dest -Encoding utf8
+=======
+        ((New-Object System.Net.WebClient).DownloadString($url)) | out-file $dest
+>>>>>>> ece2ded824d533638c4c2241956941caf50a43a9
     }
     write-host "installing $dest"
     $out = & cmd /c start /wait msiexec /i $dest /qn /passive /log "$log"
@@ -70,6 +74,10 @@ param([switch][bool]$force)
         $psgetmodules = @(get-module powershellget -ListAvailable)
         write-host "psget modules:"
         $psgetmodules | out-string | write-host
+
+	if ($psgetmodules.length -eq 0) {	
+		throw "PowerShellGet module not found!"
+	}
         
         $modulesrc = $psgetmodules[0].path
         $moduleDir = (split-path -parent $modulesrc)          
@@ -125,12 +133,6 @@ function is-admin() {
 }
 
 if ($importonly) { return }
-
-$execPolicy = get-executionpolicy
-
-if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
-    Set-ExecutionPolicy Unrestricted -Force -ErrorAction Continue
-}
 
 $e = get-envinfo -checkcommands "Install-Module"
 write-host "Env info:"
