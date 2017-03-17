@@ -52,11 +52,7 @@ function download-oneget() {
     $log = "$tmpdir\log.txt"
     if (!(test-path $dest)) {
         write-host "downloading $dest"
-<<<<<<< HEAD
         ((New-Object System.Net.WebClient).DownloadString("$url")) | out-file $dest -Encoding utf8
-=======
-        ((New-Object System.Net.WebClient).DownloadString($url)) | out-file $dest
->>>>>>> ece2ded824d533638c4c2241956941caf50a43a9
     }
     write-host "installing $dest"
     $out = & cmd /c start /wait msiexec /i $dest /qn /passive /log "$log"
