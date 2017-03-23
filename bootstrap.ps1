@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param([switch][bool]$force = $false)
-$version = "1.0.1"
+$version = "1.0.2"
 
 function _is-admin() {
  $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
