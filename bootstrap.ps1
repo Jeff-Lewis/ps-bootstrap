@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param([switch][bool]$force = $false)
-$version = "1.0.1"
+$version = "1.0.2"
 
 function _is-admin() {
  $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -63,6 +63,8 @@ function test-stagelock($stagefile) {
 
 function write-stagelock($stagefile) {
     $lockfile = "$stagefile.lock"
+    $fullpath = join-path (get-item .).FullName $lockfile
+    write-verbose "writing lockfile '$fullpath': version=$version"
     $version | out-file $lockfile -force
     get-date | out-string | Out-File $lockfile -append
 }
