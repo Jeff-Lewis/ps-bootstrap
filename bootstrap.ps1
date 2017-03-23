@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param([switch][bool]$force = $false)
-$version = "1.0.2"
+$version = "1.0.1"
 
 function _is-admin() {
  $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -41,9 +41,11 @@ function enable-execution() {
 }
 
 function test-stagelock($stagefile) {
+    $dir = (get-item .).FullName
     $lockfile = "$stagefile.lock"
     $lockvalid = $false
     if (test-path $lockfile) {
+        $lockfile = (get-item $lockfile).FullName
         $lockversion = get-content $lockfile | select -first 1
         if ($lockversion -ne $version) {
             write-verbose "lockfile '$lockfile': version '$lockversion' is older than current '$version'"
@@ -54,7 +56,7 @@ function test-stagelock($stagefile) {
             $lockvalid = $true
         }
     } else {
-        write-verbose "lockfile '$lockfile' does not exist"
+        write-verbose "lockfile '$dir/$lockfile' does not exist"
     }
     return $lockvalid
 }
