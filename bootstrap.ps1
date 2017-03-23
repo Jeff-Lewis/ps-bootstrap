@@ -46,11 +46,15 @@ function test-stagelock($stagefile) {
     if (test-path $lockfile) {
         $lockversion = get-content $lockfile | select -first 1
         if ($lockversion -ne $version) {
+            write-verbose "lockfile '$lockfile': version '$lockversion' is older than current '$version'"
             $lockvalid = $false
         }
         else {
+            write-verbose "lockfile '$lockfile': version '$lockversion' is current '$version'"
             $lockvalid = $true
         }
+    } else {
+        write-verbose "lockfile '$lockfile' does not exist"
     }
     return $lockvalid
 }
