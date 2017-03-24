@@ -16,6 +16,11 @@ function test-choco() {
 }
 
 function install-chocolatey ($version = $null) {
+    if (!_is-admin) {
+        Write-Warning "installing chocolatey requires elevation. please run bootstrap with -elevate argument"
+        return $false
+    }
+
 	if (!(test-choco)) {
 			Write-Warning "chocolatey not found, installing"
 
@@ -43,17 +48,22 @@ function install-chocolatey ($version = $null) {
 	{
 		write-host "chocolatey is already installed"       
 	}
+
+    return test-choco
 }
 
 function ensure-choco() {
     if (!( test-command "choco")) {
-        install-chocolatey 
+        return install-chocolatey 
+    }
+    else {
+        return $true
     }
 }
 
 
 function get-installedChoco() {
-    ensure-choco
+    $choco = ensure-choco
     $installed = @{}
     $chocoList = (choco list -localonly) 
     if (!($chocoList[0] -match "No packages found")) {
@@ -89,9 +99,15 @@ function check-install(
 	if ($global:installed -eq $null -or  $global:installed.Count -eq 0) {
 		$global:installed = get-installedChoco
 	}
-    if (! $global:installed.ContainsKey($prog)) {
+    if (!$global:installed.ContainsKey($prog)) {
         $srcArgs = @()
         $otherArgs= @()
+
+        if (!_is-admin){
+            Write-Warning "installing chocolatey packages requires elevation. please run bootstrap with -elevate argument"
+            return $false
+        }
+
         if (![string]::IsNullOrEmpty($source)) { 
             write-host "installing $prog from source $source"
             $srcArgs += "-Source" 
@@ -122,12 +138,13 @@ function check-install(
     {
         write-host "$prog is already installed"
 
-         if ($configAction -ne $null -and $forceConfig) {
+        if ($configAction -ne $null -and $forceConfig) {
             $configAction.Invoke()
         }
         else {
         }
     }
+    return $global:installed.ContainsKey($prog)
 }
 
 function _Refresh-Env() {
@@ -136,4 +153,4 @@ function _Refresh-Env() {
 }
 
 
-ensure-choco
+return ensure-choco

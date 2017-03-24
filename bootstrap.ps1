@@ -1,6 +1,18 @@
+<#
+    .PARAM userScope - do not elevate. do everything that can be done in user scope
+#>
 [CmdletBinding()]
-param([switch][bool]$force = $false)
-$version = "1.0.2"
+param(
+    [switch][bool]$force = $false, 
+    [switch][bool] $userScope = $true,
+    [switch][bool] $elevate
+)
+
+if ($elevate) { $userScope = $false }
+
+$version = "1.1.4"
+$repoUrl = "https://raw.githubusercontent.com/qbikez/ps-bootstrap"
+$branch = "master"
 
 function _is-admin() {
  $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
@@ -28,7 +40,9 @@ function enable-execution() {
         if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass" -and $userpolicy -ne "Undefined") {
             Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction stop 
         }
-        Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
+        if (_is-admin) {
+            Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
+        }
     } else {
         return $true
     }
@@ -45,15 +59,32 @@ function test-stagelock($stagefile) {
     $lockfile = "$stagefile.lock"
     $lockvalid = $false
     if (test-path $lockfile) {
+        $lockname = $stagefile
         $lockfile = (get-item $lockfile).FullName
-        $lockversion = get-content $lockfile | select -first 1
+        write-verbose "lockfile '$lockname': location='$lockfile'"
+        $c =  get-content $lockfile 
+        $lockversion = $c | select -first 1
+        $waselevated = $c | % { if($_ -match "elevated:\s*(.*)") { $matches[1] } }
+        #$c | write-verbose
         if ($lockversion -ne $version) {
-            write-verbose "lockfile '$lockfile': version '$lockversion' is older than current '$version'"
+            write-verbose "lockfile '$lockname': version '$lockversion' is older than current '$version'"
             $lockvalid = $false
         }
         else {
-            write-verbose "lockfile '$lockfile': version '$lockversion' is current '$version'"
-            $lockvalid = $true
+            write-verbose "lockfile '$lockname': version '$lockversion' is current '$version'"
+            Write-Verbose "lockfile '$lockname': elevated: $waselevated; current elevation: $(_is-admin)"
+            if ($waselevated -eq $null -or $waselevated -eq 'false') {
+                if (_is-admin) {
+                    write-verbose "lockfile '$lockname': considered invalid, because it was run without elevation"
+                    $lockvalid = $false
+                } else {
+                    $lockvalid = $true
+                }
+            } else {
+                Write-Verbose "lockfile '$lockname': elevated: TRUE"
+                $lockvalid = $true
+            }
+
         }
     } else {
         write-verbose "lockfile '$dir/$lockfile' does not exist"
@@ -67,25 +98,31 @@ function write-stagelock($stagefile) {
     write-verbose "writing lockfile '$fullpath': version=$version"
     $version | out-file $lockfile -force
     get-date | out-string | Out-File $lockfile -append
+    "elevated: $(_is-admin)" | out-file $lockfile -append
 }
 
 function Invoke-UrlScript(
     [Parameter(Mandatory=$true)]$url, 
     [Parameter(Mandatory=$true)]$outfile
 ) {    
-    pushd 
     $outdir = split-path -Parent $outfile
     if ([string]::isnullorempty($outdir)) { $outdir = "." }
     $name = Split-Path -Leaf $outfile
     if (!(test-path $outdir)) { $null = mkdir $outdir }
+
+    pushd 
     cd $outdir
     try {
         $lockvalid = test-stagelock $outfile
-        if (!$lockvalid) {
+        if (!$lockvalid -or $force) {
             #init build tools        
             $bootstrap = "$outdir/$name"
             $shouldDownload = $true
-            if ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
+            if ((test-path "$psscriptroot/.git") -and (test-path "$psscriptroot/$stage.ps1")) {
+                write-verbose "using stage file '$stage.ps1' from source"
+                copy-item "$psscriptroot/$stage.ps1" $bootstrap -Force
+                $shouldDownload = $false
+            } elseif ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
 	            $ts = (Get-Item $bootstrap).LastWriteTime
                 $h = Invoke-WebRequest $url -Method Head -UseBasicParsing
                 try {
@@ -102,9 +139,13 @@ function Invoke-UrlScript(
             if ($shouldDownload) {
                 ((New-Object System.Net.WebClient).DownloadString("$url")) | out-file $bootstrap -Encoding utf8
             }
-            & $bootstrap
+            $r = & $bootstrap
      
-            write-stagelock $outfile
+            if ($r) {
+                write-stagelock $outfile
+            } else {
+                Write-Warning "stage $outfile completed, but reports some actions were not executed. Not writing lock file"
+            }
             #Install-Module pathutils
             #refresh-env
             
@@ -125,8 +166,8 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
         write-warning "starting this script as Administrator..."
         if ($invocation -eq $null) { $invocation = $myinvocation }
         $cmd = $null
-        $invocation | out-string | write-host
-        $invocation.MyCommand | out-string | write-host
+        $invocation | out-string | write-verbose
+        $invocation.MyCommand | out-string | write-verbose
         #$cmd = "$($invocation.scriptname)"
         if ([string]::IsNullOrEmpty($cmd)) {
             $cmd = $invocation.MyCommand.Definition
@@ -138,10 +179,10 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
 		write-host "starting as admin:"
         write-host "powershell -Verb runAs -ArgumentList $args"
         if ($usecmd) {
-            Start-Process cmd -Verb runAs -ArgumentList "/C powershell $args > $env:TEMP/bootstrap.log" -wait
+            $p = Start-Process cmd -Verb runAs -ArgumentList "/C powershell $args > $env:TEMP/bootstrap.log" -wait
             gc "$env:TEMP/bootstrap.log" | write-host
         } else {
-            Start-Process powershell -Verb runAs -ArgumentList $args -wait
+            $p = Start-Process powershell -Verb runAs -ArgumentList $args -wait
         }        
         return $false
     } else {
@@ -165,7 +206,6 @@ try {
     cd $wd
  
     $stages = "stage0","stage1","stage2"
-    $allvalid = $true
     foreach($stage in $stages) {
         if (!(test-stagelock ".$stage.ps1")) {
             $allvalid = $false
@@ -175,18 +215,21 @@ try {
         }
     }
 
-    if ($allvalid -and !$force) { 
-        write-verbose "all stages READY"
-        return 
+    if ($allvalid) {
+        if (!$force) { 
+            write-verbose "all stages READY"
+            return 
+        } else {
+            write-verbose "all stages are READY, but -force specified - proceeding"
+        }
     }
-    if (!(ElevateMe $MyInvocation -usecmd)) { return }
+    
+    if (!$userScope) {    
+        if (!(ElevateMe $MyInvocation -usecmd)) { return }
+    }
 
     foreach($stage in $stages) {
-        if ((test-path ".git") -and (test-path "$stage.ps1")) {
-            & ".\$stage.ps1"
-        } else {
-            Invoke-UrlScript "https://raw.githubusercontent.com/qbikez/ps-bootstrap/master/$stage.ps1" ".$stage.ps1"
-        }
+            Invoke-UrlScript "$repoUrl/$branch/$stage.ps1" ".$stage.ps1"
     }
 } finally {
     popd

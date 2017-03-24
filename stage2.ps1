@@ -1,15 +1,5 @@
 $scope = "CurrentUser"
-
-
-function is-admin() {
-    $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
-    $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
-    $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
-    $IsAdmin=$prp.IsInRole($adm)
-    return $IsAdmin
-}
-
-if (Is-Admin) { $scope = "AllUsers" }
+if (_Is-Admin) { $scope = "AllUsers" }
 
 
 
@@ -26,8 +16,8 @@ if (!($env:PSModulePath.Contains($usrModules))) {
         + ";" + [system.environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::Machine) 
 }
 
-(get-command install-module)
-(get-command install-module).Parameters
+#(get-command install-module)
+#(get-command install-module).Parameters
 
 function _install-module($name, $version) {
     ipmo $name -erroraction ignore -MinimumVersion $version
@@ -52,4 +42,6 @@ function _install-module($name, $version) {
 }
 
 _install-module require -version "1.0.5"
+
+return $true
 
