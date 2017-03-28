@@ -16,7 +16,7 @@ function test-choco() {
 }
 
 function install-chocolatey ($version = $null) {
-    if (!_is-admin) {
+    if (!(_is-admin)) {
         Write-Warning "installing chocolatey requires elevation. please run bootstrap with -elevate argument"
         return $false
     }
