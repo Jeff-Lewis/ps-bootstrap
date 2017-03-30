@@ -169,7 +169,7 @@ try {
     if ($nuget -eq $null) {
         write-verbose "installing nuget package provider"
         # this isn't availalbe in the current official release of oneget (?)
-        install-packageprovider -Name NuGet -Force -MinimumVersion 2.8.5.201 -verbose
+        install-packageprovider -Name NuGet -Force -MinimumVersion 2.8.5.201 -verbose -forcebootstrap -confirm:$false
     }
     $nuget | out-string | write-verbose
 }
