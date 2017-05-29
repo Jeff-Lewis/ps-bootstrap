@@ -33,22 +33,24 @@ function test-executionPolicy() {
 }
 
 function enable-execution() {
-    $execPolicy = get-executionpolicy
-
-    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
-        $userpolicy = Get-ExecutionPolicy -Scope CurrentUser
-        if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass" -and $userpolicy -ne "Undefined") {
-            Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction stop 
-        }
-        if (_is-admin) {
-            Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
-        }
-    } else {
-        return $true
+    if (test-executionPolicy) { return $true }
+    
+    # try to set global execution policy
+    if (_is-admin) {
+        Set-ExecutionPolicy Unrestricted -Force -ErrorAction continue
+        if (test-executionPolicy) { return $true }
     }
     
-    $execPolicy = get-executionpolicy
-    if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
+    # set user policy
+    $userpolicy = Get-ExecutionPolicy -Scope CurrentUser
+    if ($userpolicy -ne "Unrestricted" -and $userpolicy -ne "Bypass") {
+        Set-ExecutionPolicy Unrestricted -Force -Scope CurrentUser -ErrorAction stop 
+    }
+    
+    if (test-executionPolicy) { 
+        return $true 
+    }
+    else {
         throw "failed to set ExecuctionPolicy to Unrestricted"
     }
     
