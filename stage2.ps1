@@ -26,10 +26,10 @@ if (!($env:PSModulePath.Contains($usrModules))) {
 #(get-command install-module).Parameters
 
 function _install-module($name, $version) {
-    ipmo $name -erroraction ignore -MinimumVersion $version
+    ipmo $name -erroraction Continue -MinimumVersion $version
     if ((gmo $name -ErrorAction Ignore) -eq $null) {        
         #try import any version       
-        ipmo $name -ErrorAction ignore
+        ipmo $name -ErrorAction Continue
         if ((gmo $name -ErrorAction Ignore) -eq $null) {                   
             write-verbose "module $name min-version $version not found on any of module loading paths: $env:PSModulePath"
             $a = @{
