@@ -10,7 +10,7 @@ param(
 
 if ($elevate) { $userScope = $false }
 
-$version = "1.1.5"
+$version = "1.1.5.1"
 $repoUrl = "https://raw.githubusercontent.com/qbikez/ps-bootstrap"
 $branch = "master"
 

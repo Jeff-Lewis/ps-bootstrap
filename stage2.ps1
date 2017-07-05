@@ -1,9 +1,9 @@
 $scope = "CurrentUser"
 if (_Is-Admin) { 
-    write-warning "user is Admin. Setting install scope to AllUsers."
+    write-verbose "user is Admin. Setting install scope to AllUsers."
     $scope = "AllUsers" 
 } else {
-    write-warning "user is not Admin. Setting install scope to CurrentUser."
+    write-verbose "user is not Admin. Setting install scope to CurrentUser."
     $scope = "CurrentUser"
 }
 
@@ -27,10 +27,11 @@ if (!($env:PSModulePath.Contains($usrModules))) {
 
 function _install-module($name, $version) {
     ipmo $name -erroraction ignore -MinimumVersion $version
-    if ((gmo $name -ErrorAction Ignore) -eq $null) {
+    if ((gmo $name -ErrorAction Ignore) -eq $null) {        
         #try import any version       
         ipmo $name -ErrorAction ignore
-        if ((gmo $name -ErrorAction Ignore) -eq $null) {       
+        if ((gmo $name -ErrorAction Ignore) -eq $null) {                   
+            write-verbose "module $name min-version $version not found on any of module loading paths: $env:PSModulePath"
             $a = @{
                 Scope = $scope
                 MinimumVersion = $version
@@ -41,6 +42,7 @@ function _install-module($name, $version) {
             }
             install-module $name @a -Verbose
         } else {
+            write-verbose "module $name found, but has lower version than $version. "
             update-module $name -erroraction stop -Verbose
         }
     } 
