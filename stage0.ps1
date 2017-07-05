@@ -174,14 +174,18 @@ try {
     $nuget | out-string | write-verbose
 }
 catch {
-    #ignore   
+    # ignore   
 }
 # this is a private function
 #Install-NuGetClientBinaries -force -CallerPSCmdlet $PSCmdlet
 #Install-NuGetClientBinaries -confirm:$false
 $psgallery = Get-PSRepository psgallery
 if ($psgallery.installationPolicy -ne "Trusted") {
-    Set-PSRepository -name PSGallery -InstallationPolicy Trusted -verbose
+    try {
+        Set-PSRepository -name PSGallery -InstallationPolicy Trusted -verbose
+    } catch {
+        write-warning "failed to set psgallery repository as trusted: $($_.Exception.Message)"
+    }
 } 
 
 return $ready
