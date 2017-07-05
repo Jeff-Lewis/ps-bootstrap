@@ -1,5 +1,11 @@
 $scope = "CurrentUser"
-if (_Is-Admin) { $scope = "AllUsers" }
+if (_Is-Admin) { 
+    write-warning "user is Admin. Setting install scope to AllUsers."
+    $scope = "AllUsers" 
+} else {
+    write-warning "user is not Admin. Setting install scope to CurrentUser."
+    $scope = "CurrentUser"
+}
 
 
 
@@ -33,9 +39,9 @@ function _install-module($name, $version) {
             if ((get-command install-module).parameters["allowclobber"] -ne $null) {
                 $a += @{ allowClobber = $true }
             }
-            install-module $name @a
+            install-module $name @a -Verbose
         } else {
-            update-module $name -erroraction stop
+            update-module $name -erroraction stop -Verbose
         }
     } 
     ipmo $name -MinimumVersion $version

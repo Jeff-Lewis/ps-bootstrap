@@ -15,19 +15,20 @@ $repoUrl = "https://raw.githubusercontent.com/qbikez/ps-bootstrap"
 $branch = "master"
 
 function _is-admin() {
- $wid=[System.Security.Principal.WindowsIdentity]::GetCurrent()
- $prp=new-object System.Security.Principal.WindowsPrincipal($wid)
- $adm=[System.Security.Principal.WindowsBuiltInRole]::Administrator
- $IsAdmin=$prp.IsInRole($adm)
- return $IsAdmin
+    $wid = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+    $prp = new-object System.Security.Principal.WindowsPrincipal($wid)
+    $adm = [System.Security.Principal.WindowsBuiltInRole]::Administrator
+    $IsAdmin = $prp.IsInRole($adm)
+    return $IsAdmin
 }
 
 function test-executionPolicy() {
-   $execPolicy = get-executionpolicy
+    $execPolicy = get-executionpolicy
 
     if ($execPolicy -ne "Unrestricted" -and $execPolicy -ne "Bypass") {
         return $false
-    } else {
+    }
+    else {
         return $true
     }
 }
@@ -64,9 +65,9 @@ function test-stagelock($stagefile) {
         $lockname = $stagefile
         $lockfile = (get-item $lockfile).FullName
         write-verbose "lockfile '$lockname': location='$lockfile'"
-        $c =  get-content $lockfile 
+        $c = get-content $lockfile 
         $lockversion = $c | select -first 1
-        $waselevated = $c | % { if($_ -match "elevated:\s*(.*)") { $matches[1] } }
+        $waselevated = $c | % { if ($_ -match "elevated:\s*(.*)") { $matches[1] } }
         #$c | write-verbose
         if ($lockversion -ne $version) {
             write-verbose "lockfile '$lockname': version '$lockversion' is older than current '$version'"
@@ -79,16 +80,19 @@ function test-stagelock($stagefile) {
                 if (_is-admin) {
                     write-verbose "lockfile '$lockname': considered invalid, because it was run without elevation"
                     $lockvalid = $false
-                } else {
+                }
+                else {
                     $lockvalid = $true
                 }
-            } else {
+            }
+            else {
                 Write-Verbose "lockfile '$lockname': elevated: TRUE"
                 $lockvalid = $true
             }
 
         }
-    } else {
+    }
+    else {
         write-verbose "lockfile '$dir/$lockfile' does not exist"
     }
     return $lockvalid
@@ -104,8 +108,8 @@ function write-stagelock($stagefile) {
 }
 
 function Invoke-UrlScript(
-    [Parameter(Mandatory=$true)]$url, 
-    [Parameter(Mandatory=$true)]$outfile
+    [Parameter(Mandatory = $true)]$url, 
+    [Parameter(Mandatory = $true)]$outfile
 ) {    
     $outdir = split-path -Parent $outfile
     if ([string]::isnullorempty($outdir)) { $outdir = "." }
@@ -124,15 +128,17 @@ function Invoke-UrlScript(
                 write-verbose "using stage file '$stage.ps1' from source"
                 copy-item "$psscriptroot/$stage.ps1" $bootstrap -Force
                 $shouldDownload = $false
-            } elseif ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
-	            $ts = (Get-Item $bootstrap).LastWriteTime
+            }
+            elseif ((test-path $bootstrap) -and (get-command Invoke-WebRequest -erroraction SilentlyContinue) -ne $null) {
+                $ts = (Get-Item $bootstrap).LastWriteTime
                 $h = Invoke-WebRequest $url -Method Head -UseBasicParsing
                 try {
-                $r = Invoke-WebRequest $url -UseBasicParsing -Headers @{"If-Modified-Since" = $ts } 
+                    $r = Invoke-WebRequest $url -UseBasicParsing -Headers @{"If-Modified-Since" = $ts } 
                     if ($r.StatusCode -eq 200) {
                         $shouldDownload = $true
                     } 
-                } catch {
+                }
+                catch {
                     if ($_.Exception.Response.StatusCode -eq "NotModified") {
                         $shouldDownload = $false
                     }
@@ -145,7 +151,8 @@ function Invoke-UrlScript(
      
             if ($r) {
                 write-stagelock $outfile
-            } else {
+            }
+            else {
                 Write-Warning "stage $outfile completed, but reports some actions were not executed. Not writing lock file"
             }
             #Install-Module pathutils
@@ -157,7 +164,7 @@ function Invoke-UrlScript(
         throw
     }
     finally {
-	    popd
+        popd
     }
 }
 
@@ -178,16 +185,18 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
         if ($VerbosePreference -eq "Continue") { $args += @("-verbose") }
         #$args += " > bootstrap.log"
         #$args = "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))"
-		write-host "starting as admin:"
+        write-host "starting as admin:"
         write-host "powershell -Verb runAs -ArgumentList $args"
         if ($usecmd) {
             $p = Start-Process cmd -Verb runAs -ArgumentList "/C powershell $args > $env:TEMP/bootstrap.log" -wait
             gc "$env:TEMP/bootstrap.log" | write-host
-        } else {
+        }
+        else {
             $p = Start-Process powershell -Verb runAs -ArgumentList $args -wait
         }        
         return $false
-    } else {
+    }
+    else {
         return $true
     }
 }
@@ -196,10 +205,10 @@ function ElevateMe($invocation = $null, [switch][bool]$usecmd) {
 
 $wd = "$env:localappdata/ps-bootstrap"
 
-    if (!(test-executionPolicy)) {
-        enable-execution
-        $force = $true                
-    }
+if (!(test-executionPolicy)) {
+    enable-execution
+    $force = $true                
+}
 
 
 if (!(test-path $wd)) { mkdir $wd }
@@ -207,12 +216,13 @@ pushd
 try {
     cd $wd
  
-    $stages = "stage0","stage1","stage2"
-    foreach($stage in $stages) {
+    $stages = "stage0", "stage1", "stage2"
+    foreach ($stage in $stages) {
         if (!(test-stagelock ".$stage.ps1")) {
             $allvalid = $false
             write-verbose ".$stage.ps1: PENDING"
-        } else {
+        }
+        else {
             write-verbose ".$stage.ps1: READY"
         }
     }
@@ -221,7 +231,8 @@ try {
         if (!$force) { 
             write-verbose "all stages READY"
             return 
-        } else {
+        }
+        else {
             write-verbose "all stages are READY, but -force specified - proceeding"
         }
     }
@@ -230,9 +241,10 @@ try {
         if (!(ElevateMe $MyInvocation -usecmd)) { return }
     }
 
-    foreach($stage in $stages) {
-            Invoke-UrlScript "$repoUrl/$branch/$stage.ps1" ".$stage.ps1"
+    foreach ($stage in $stages) {
+        Invoke-UrlScript "$repoUrl/$branch/$stage.ps1" ".$stage.ps1"
     }
-} finally {
+}
+finally {
     popd
 }
