@@ -28,7 +28,10 @@ function install-chocolatey ($version = $null) {
             $s = (new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1')
             if ($version -ne $null) {
                 $s = $s -replace "https://chocolatey.org/api/v2/package/chocolatey","https://chocolatey.org/api/v2/package/chocolatey/$version"
-			    $s = $s -replace "https://packages.chocolatey.org/.*\.nupkg","https://chocolatey.org/api/v2/package/chocolatey/$version"
+                $s = $s -replace "https://packages.chocolatey.org/.*\.nupkg","https://chocolatey.org/api/v2/package/chocolatey/$version"
+                Write-Warning "installing chocolatey version: $version"
+            } else {
+                Write-Warning "installing latest chocolatey"
             }
 			iex $s
 			cmd /c "SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
